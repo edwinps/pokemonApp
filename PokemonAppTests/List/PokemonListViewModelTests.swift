@@ -12,12 +12,15 @@ import Combine
 class PokemonListViewModelTests: XCTestCase {
     var viewModel: PokemonListViewModel!
     var mockNetwork: MockDataInteractor!
+    var mockStorage: MockDataStorageInteractor!
     var cancellables: Set<AnyCancellable> = []
 
+    @MainActor
     override func setUp() {
         super.setUp()
         mockNetwork = MockDataInteractor()
-        viewModel = PokemonListViewModel(network: mockNetwork)
+        mockStorage = MockDataStorageInteractor()
+        viewModel = PokemonListViewModel(network: mockNetwork, storage: mockStorage)
     }
 
     override func tearDown() {
@@ -27,7 +30,6 @@ class PokemonListViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    /// Test: fetchPokemonList()
     func testFetchPokemonList_Success() async {
         // Given
         let expectedPokemons = [
@@ -58,7 +60,6 @@ class PokemonListViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.pokemons.isEmpty)
     }
 
-    /// Test: fetchPokemonList() with errors
     func testFetchPokemonList_Failure() async {
         // Given
         mockNetwork.shouldThrowError = true
@@ -86,6 +87,12 @@ class PokemonListViewModelTests: XCTestCase {
     func testLoadNextPage_NoMorePages() async {
         // Given
         viewModel.pokemons = []
+
+        // When
+        await viewModel.loadNextPage()
+
+        // Then
+        XCTAssertEqual(viewModel.pokemons.count, 0)
 
         // When
         await viewModel.loadNextPage()
@@ -139,7 +146,7 @@ class PokemonListViewModelTests: XCTestCase {
             PokemonSummary(name: "Charmander", url: "https://pokeapi.co/api/v2/pokemon/4/"),
             PokemonSummary(name: "Pikachu", url: "https://pokeapi.co/api/v2/pokemon/25/")
         ]
-        viewModel.favorites = ["Pikachu"]
+        viewModel.favorites = [25]
 
         viewModel.sortOrder = .idAscending
         XCTAssertEqual(viewModel.filteredPokemons.first?.name, "Bulbasaur")
@@ -160,19 +167,18 @@ class PokemonListViewModelTests: XCTestCase {
         viewModel.pokemons = [pikachu]
 
         // When - Adding favorite
-        viewModel.favorites.insert("Pikachu")
+        viewModel.favorites.insert(25)
 
         // Then
-        XCTAssertTrue(viewModel.favorites.contains("Pikachu"))
+        XCTAssertTrue(viewModel.favorites.contains(25))
 
         // When - Removing favorite
-        viewModel.favorites.remove("Pikachu")
+        viewModel.favorites.remove(25)
 
         // Then
-        XCTAssertFalse(viewModel.favorites.contains("Pikachu"))
+        XCTAssertFalse(viewModel.favorites.contains(25))
     }
 
-    /// Test: sortPokemons() with favorites first
     func testSortPokemons_FavoritesFirst() {
         // Given
         let bulbasaur = PokemonSummary(name: "Bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/")
@@ -180,12 +186,38 @@ class PokemonListViewModelTests: XCTestCase {
         let pikachu = PokemonSummary(name: "Pikachu", url: "https://pokeapi.co/api/v2/pokemon/25/")
 
         viewModel.pokemons = [bulbasaur, charmander, pikachu]
-        viewModel.favorites = ["Pikachu"]
+        viewModel.favorites = [25]
 
         // When
         viewModel.sortOrder = .favoritesFirst
 
         // Then
         XCTAssertEqual(viewModel.filteredPokemons.first?.name, "Pikachu")
+    }
+
+    func testToggleFavorite_AddsFavorite() async {
+        // Given
+        let pokemon = PokemonSummary(name: "Pikachu", url: "https://pokeapi.co/api/v2/pokemon/25/")
+
+        // When
+        await viewModel.toggleFavorite(for: pokemon)
+
+        // Then
+        XCTAssertTrue(viewModel.favorites.contains(pokemon.id), "Pikachu should be added to favorites")
+        XCTAssertTrue(mockStorage.addFavoriteCalled, "addFavorite should have been called")
+    }
+
+    func testToggleFavorite_RemovesFavorite() async {
+        // Given
+        let pokemon = PokemonSummary(name: "Pikachu", url: "https://pokeapi.co/api/v2/pokemon/25/")
+        await viewModel.toggleFavorite(for: pokemon)
+        XCTAssertTrue(viewModel.favorites.contains(pokemon.id))
+
+        // When
+        await viewModel.toggleFavorite(for: pokemon)
+
+        // Then
+        XCTAssertFalse(viewModel.favorites.contains(pokemon.id), "Pikachu should be removed from favorites")
+        XCTAssertTrue(mockStorage.removeFavoriteCalled, "removeFavorite should have been called")
     }
 }

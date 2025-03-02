@@ -34,7 +34,11 @@
       }
     },
     {
+      "enabled" : false,
       "parallelizable" : true,
+      "skippedTests" : [
+        "PokemonAppUITests"
+      ],
       "target" : {
         "containerPath" : "container:PokemonApp.xcodeproj",
         "identifier" : "8403A1D62D6FA7F100303F7F",

@@ -7,12 +7,11 @@
 import SwiftUI
 
 struct PokemonListView: View {
-    @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel: PokemonListViewModel
     @State private var isLoadingNextPage = false
     @State var path: [NavigationPath] = []
 
-    init(viewModel: PokemonListViewModel = PokemonListViewModel()) {
+    init(viewModel: PokemonListViewModel)  {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
@@ -56,7 +55,7 @@ private extension PokemonListView {
         @Binding var isLoadingNextPage: Bool
 
         var body: some View {
-            LazyVStack {
+            LazyVStack(alignment: .leading) {
                 ForEach(viewModel.filteredPokemons) { summary in
                     Button(action: {
                         let viewModel = PokemonDetailViewModel(pokemonSummary: summary)
@@ -67,7 +66,6 @@ private extension PokemonListView {
                                 loadNextPageIfNeeded(for: summary)
                             }
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
             }
             .overlay(
@@ -95,9 +93,13 @@ private extension PokemonListView {
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Button(action: { toggleFavorite(for: summary) }) {
-                    Image(systemName: viewModel.favorites.contains(summary.name) ? "star.fill" : "star")
-                        .foregroundColor(viewModel.favorites.contains(summary.name) ? .yellow : .gray)
+                Button(action: {
+                    Task { [viewModel] in
+                        await viewModel.toggleFavorite(for: summary)
+                    }
+                }) {
+                    Image(systemName: viewModel.favorites.contains(summary.id) ? "star.fill" : "star")
+                        .foregroundColor(viewModel.favorites.contains(summary.id) ? .yellow : .gray)
                         .padding()
                 }
             }
@@ -106,14 +108,6 @@ private extension PokemonListView {
                             .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     )
             .padding(.horizontal)
-        }
-
-        func toggleFavorite(for summary: PokemonSummary) {
-            if viewModel.favorites.contains(summary.name) {
-                viewModel.favorites.remove(summary.name)
-            } else {
-                viewModel.favorites.insert(summary.name)
-            }
         }
     }
     var sortingMenu: some View {
@@ -135,5 +129,4 @@ private extension PokemonListView {
 
 #Preview {
     PokemonListView(viewModel: PokemonListViewModel.test)
-        .modelContainer(for: Item.self, inMemory: true)
 }

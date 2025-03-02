@@ -5,14 +5,17 @@
 //  Created by epena on 28/2/25.
 //
 import Foundation
+import SwiftData
+import SwiftUI
 
 #if DEBUG
+
 extension PokemonSummary {
     static let testPikachu: PokemonSummary = PokemonSummary(name: "Pikachu", url: "https://pokeapi.co/api/v2/pokemon/25/")
 }
 
 extension PokemonListViewModel {
-    static let test = PokemonListViewModel(network: DataTest())
+    static let test = PokemonListViewModel(network: DataTest(), storage: DataStorageTest())
 }
 
 extension PokemonDetailViewModel {
@@ -43,6 +46,22 @@ struct DataTest: DataInteractor {
     func getEvolutions(url: URL) async throws -> EvolutionChain {
         let data = try Data(contentsOf: urlEvolutions)
         return try JSONDecoder().decode(EvolutionChain.self, from: data)
+    }
+}
+
+class DataStorageTest: DataStorageInteractor {
+    var favorites: Set<Int> = []
+
+    func loadFavorites() async -> Set<Int> {
+        return favorites
+    }
+
+    func addFavorite(id: Int, name: String) async throws {
+        favorites.insert(id)
+    }
+
+    func removeFavorite(id: Int) async throws {
+        favorites.remove(id)
     }
 }
 #endif

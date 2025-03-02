@@ -6,20 +6,24 @@
 //
 
 import SwiftUI
+import SwiftData
 
 final class PokemonListViewModel: ObservableObject {
     private var network: DataInteractor
+    private let storage: DataStorageInteractor
     private var currentPage = 0
     @Published var pokemons: [PokemonSummary] = []
     @Published var searchText: String = ""
     @Published var sortOrder: SortOrder = .idAscending
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var favorites: Set<String> = []
+    @Published var favorites: Set<Int> = []
     private var noMorePages = false
 
-    init(network: DataInteractor = Network()) {
+    init(network: DataInteractor = Network(), storage: DataStorageInteractor) {
         self.network = network
+        self.storage = storage
+        Task { await loadFavorites() }
     }
 
     enum SortOrder {
@@ -36,9 +40,8 @@ final class PokemonListViewModel: ObservableObject {
         await setLoading(true)
         do {
             let pokemonListResponse = try await network.getPokemons(page: currentPage)
-            guard !pokemonListResponse.results.isEmpty || pokemonListResponse.next == nil else {
+            if pokemonListResponse.results.isEmpty || pokemonListResponse.next == nil {
                 noMorePages = true
-                return
             }
             let newPokemons = pokemonListResponse.results
             await updatePokemons(with: newPokemons)
@@ -55,9 +58,28 @@ final class PokemonListViewModel: ObservableObject {
         currentPage += 1
         await fetchPokemonList()
     }
+
+    func toggleFavorite(for summary: PokemonSummary) async {
+        do {
+            if favorites.contains(summary.id) {
+                try await storage.removeFavorite(id: summary.id)
+                await MainActor.run { _ = favorites.remove(summary.id) }
+            } else {
+                try await storage.addFavorite(id: summary.id, name: summary.name)
+                await MainActor.run { _ = favorites.insert(summary.id) }
+            }
+        } catch {
+            print("Error managing favorite: \(error.localizedDescription)")
+        }
+    }
 }
 
 private extension PokemonListViewModel {
+    func loadFavorites() async {
+        let storedFavorites = await storage.loadFavorites()
+        await MainActor.run { self.favorites = storedFavorites }
+    }
+
     func sortPokemons(_ list: [PokemonSummary]) -> [PokemonSummary] {
         switch sortOrder {
         case .idAscending:
@@ -67,7 +89,7 @@ private extension PokemonListViewModel {
         case .nameAscending:
             return list.sorted { $0.name < $1.name }
         case .favoritesFirst:
-            return list.sorted { favorites.contains($0.name) && !favorites.contains($1.name) }
+            return list.sorted { favorites.contains($0.id) && !favorites.contains($1.id) }
         }
     }
 
