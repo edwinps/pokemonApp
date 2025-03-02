@@ -5,14 +5,7 @@
 //  Created by epena on 26/2/25.
 //
 
-import Foundation
 
-// MARK: - Model Structure
-struct PokemonSummary: Codable, Identifiable, Hashable {
-    var id: String { url }
-    let name: String
-    let url: String
-}
 
 struct Pokemon: Codable, Identifiable {
     let id: Int
@@ -41,10 +34,6 @@ struct PokemonStat: Codable {
 
 struct StatDetail: Codable {
     let name: String
-}
-
-struct PokemonListResponse: Codable {
-    let results: [PokemonSummary]
 }
 
 struct PokemonResponse: Codable {

@@ -24,10 +24,11 @@ class DataInteractorTests: XCTestCase {
     func testGetPokemons_Success() async throws {
         // Given
         let expectedPokemons = [PokemonSummary(name: "Pikachu", url: "https://pokeapi.co/pikachu")]
-        mockInteractor.mockPokemonSummaries = expectedPokemons
+        let expectedtResponse = PokemonListResponse(results: expectedPokemons, next: nil)
+        mockInteractor.mockPokemonListResponse = expectedtResponse
 
         // When
-        let pokemons = try await mockInteractor.getPokemons(page: 1)
+        let pokemons = try await mockInteractor.getPokemons(page: 1).results
 
         // Then
         XCTAssertEqual(pokemons.count, 1)

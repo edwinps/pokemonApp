@@ -7,10 +7,10 @@
 import Foundation
 
 protocol DataInteractor {
-    func getPokemons(page: Int) async throws -> [PokemonSummary]
-
-    // Search
+    func getPokemons(page: Int) async throws -> PokemonListResponse
     func getPokemon(name: String) async throws -> Pokemon?
+    func getSpecies(name: String) async throws -> PokemonSpecies
+    func getEvolutions(url: URL) async throws -> EvolutionChain
 }
 
 struct Network {
@@ -18,7 +18,7 @@ struct Network {
 
     struct constants {
         static let pageLimit = "limit"
-        static let itemPerPage = 100
+        static let itemPerPage = 2
         static let offset = "offset"
     }
 
@@ -28,9 +28,7 @@ struct Network {
 
     func getJSON<JSON>(request: URLRequest, type: JSON.Type) async throws -> JSON where JSON: Codable {
         let (data, response) = try await session.getData(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NetworkError.noHTTP
-        }
+
         if response.statusCode == 200 {
             do {
                 return try JSONDecoder().decode(type, from: data)

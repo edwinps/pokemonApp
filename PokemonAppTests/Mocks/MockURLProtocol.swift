@@ -10,6 +10,7 @@ import XCTest
 
 class MockURLProtocol: URLProtocol {
     static var mockResponse: (Data, HTTPURLResponse)?
+    static var mockError: Error?
 
     override class func canInit(with request: URLRequest) -> Bool {
         return true
@@ -20,7 +21,9 @@ class MockURLProtocol: URLProtocol {
     }
 
     override func startLoading() {
-        if let (mockData, response) = MockURLProtocol.mockResponse {
+        if let error = MockURLProtocol.mockError {
+            client?.urlProtocol(self, didFailWithError: error)
+        } else if let (mockData, response) = MockURLProtocol.mockResponse {
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: mockData)
         }

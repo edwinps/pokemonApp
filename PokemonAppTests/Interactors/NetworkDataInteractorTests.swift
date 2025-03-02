@@ -45,7 +45,7 @@ class NetworkDataInteractorTests: XCTestCase {
         MockURLProtocol.mockResponse = (jsonData, response)
 
         // When
-        let pokemons = try await network.getPokemons(page: 1)
+        let pokemons = try await network.getPokemons(page: 1).results
 
         // Then
         XCTAssertEqual(pokemons.count, 2)
@@ -139,4 +139,111 @@ class NetworkDataInteractorTests: XCTestCase {
             XCTFail("An unexpected error was thrown: \(error)")
         }
     }
+
+    func testGetSpecies_Success() async throws {
+            // Given
+            let jsonString = """
+            {
+                "evolution_chain": {
+                    "url": "https://pokeapi.co/api/v2/evolution-chain/10/"
+                },
+                "evolves_from_species": {
+                    "name": "pichu"
+                }
+            }
+            """
+            let jsonData = jsonString.data(using: .utf8)!
+            let response = HTTPURLResponse(url: URL(string: "https://pokeapi.co/api/v2/pokemon-species/pikachu")!,
+                                           statusCode: 200,
+                                           httpVersion: nil,
+                                           headerFields: nil)!
+
+            MockURLProtocol.mockResponse = (jsonData, response)
+
+            // When
+            let species = try await network.getSpecies(name: "pikachu")
+
+            // Then
+            XCTAssertNotNil(species)
+            XCTAssertEqual(species.evolutionChain.url, "https://pokeapi.co/api/v2/evolution-chain/10/")
+            XCTAssertEqual(species.evolvesFromSpecies?.name, "pichu") // Verifica preevolución
+        }
+
+        func testGetSpecies_Failure() async {
+            // Given
+            let response = HTTPURLResponse(url: URL(string: "https://pokeapi.co/api/v2/pokemon-species/unknown")!,
+                                           statusCode: 404,
+                                           httpVersion: nil,
+                                           headerFields: nil)!
+            MockURLProtocol.mockResponse = (Data(), response)
+
+            do {
+                // When
+                _ = try await network.getSpecies(name: "unknown")
+                XCTFail("The request should have failed")
+            } catch let error as NetworkError {
+                // Then
+                XCTAssertEqual(error, NetworkError.status(404))
+            } catch {
+                XCTFail("An unexpected error was thrown: \(error)")
+            }
+        }
+
+        func testGetEvolutions_Success() async throws {
+            // Given
+            let jsonString = """
+            {
+                "chain": {
+                    "species": { "name": "pichu" },
+                    "evolves_to": [
+                        {
+                            "species": { "name": "pikachu" },
+                            "evolves_to": [
+                                {
+                                    "species": { "name": "raichu" },
+                                    "evolves_to": []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+            """
+            let jsonData = jsonString.data(using: .utf8)!
+            let response = HTTPURLResponse(url: URL(string: "https://pokeapi.co/api/v2/evolution-chain/10")!,
+                                           statusCode: 200,
+                                           httpVersion: nil,
+                                           headerFields: nil)!
+
+            MockURLProtocol.mockResponse = (jsonData, response)
+
+            // When
+            let evolutionChain = try await network.getEvolutions(url: URL(string: "https://pokeapi.co/api/v2/evolution-chain/10")!)
+
+            // Then
+            XCTAssertNotNil(evolutionChain)
+            XCTAssertEqual(evolutionChain.chain.species.name, "pichu") // Primera evolución
+            XCTAssertEqual(evolutionChain.chain.evolvesTo.first?.species.name, "pikachu") // Segunda evolución
+            XCTAssertEqual(evolutionChain.chain.evolvesTo.first?.evolvesTo.first?.species.name, "raichu") // Última evolución
+        }
+
+        func testGetEvolutions_Failure() async {
+            // Given
+            let response = HTTPURLResponse(url: URL(string: "https://pokeapi.co/api/v2/evolution-chain/999")!,
+                                           statusCode: 500,
+                                           httpVersion: nil,
+                                           headerFields: nil)!
+            MockURLProtocol.mockResponse = (Data(), response)
+
+            do {
+                // When
+                _ = try await network.getEvolutions(url: URL(string: "https://pokeapi.co/api/v2/evolution-chain/999")!)
+                XCTFail("The request should have failed")
+            } catch let error as NetworkError {
+                // Then
+                XCTAssertEqual(error, NetworkError.status(500))
+            } catch {
+                XCTFail("An unexpected error was thrown: \(error)")
+            }
+        }
 }
