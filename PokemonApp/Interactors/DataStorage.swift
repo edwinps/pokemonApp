@@ -16,7 +16,6 @@ final class DataStorage: DataStorageInteractor {
         static let modelName = "PokemonFavorite"
     }
 
-
     init(mmodelContainer: ModelContainer) {
         self.modelContainer = mmodelContainer
         self.modelContext = mmodelContainer.mainContext

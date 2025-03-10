@@ -23,7 +23,7 @@ final class PokemonListViewModel: ObservableObject {
     init(network: DataInteractor = Network(), storage: DataStorageInteractor) {
         self.network = network
         self.storage = storage
-        Task { await loadFavorites() }
+        Task { [weak self] in await self?.loadFavorites() }
     }
 
     enum SortOrder {
@@ -63,10 +63,15 @@ final class PokemonListViewModel: ObservableObject {
         do {
             if favorites.contains(summary.id) {
                 try await storage.removeFavorite(id: summary.id)
-                await MainActor.run { _ = favorites.remove(summary.id) }
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    _ = self.favorites.remove(summary.id) }
             } else {
                 try await storage.addFavorite(id: summary.id, name: summary.name)
-                await MainActor.run { _ = favorites.insert(summary.id) }
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    _ = self.favorites.insert(summary.id)
+                }
             }
         } catch {
             print("Error managing favorite: \(error.localizedDescription)")
@@ -77,7 +82,10 @@ final class PokemonListViewModel: ObservableObject {
 private extension PokemonListViewModel {
     func loadFavorites() async {
         let storedFavorites = await storage.loadFavorites()
-        await MainActor.run { self.favorites = storedFavorites }
+        await MainActor.run { [weak self] in
+            guard let self else { return }
+            self.favorites = storedFavorites
+        }
     }
 
     func sortPokemons(_ list: [PokemonSummary]) -> [PokemonSummary] {
@@ -89,7 +97,14 @@ private extension PokemonListViewModel {
         case .nameAscending:
             return list.sorted { $0.name < $1.name }
         case .favoritesFirst:
-            return list.sorted { favorites.contains($0.id) && !favorites.contains($1.id) }
+            return list.sorted { (pokemon1, pokemon2) -> Bool in
+                let fav1 = favorites.contains(pokemon1.id)
+                let fav2 = favorites.contains(pokemon2.id)
+                if fav1 == fav2 {
+                    return pokemon1.name < pokemon2.name
+                }
+                return fav1
+            }
         }
     }
 

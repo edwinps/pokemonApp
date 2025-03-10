@@ -18,17 +18,9 @@ struct PokemonListView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                LazyVStack {
-                    ForEach(viewModel.filteredPokemons) { summary in
-                        PokemonListContent(viewModel: viewModel,
-                                           path: $path,
-                                           isLoadingNextPage: $isLoadingNextPage)
-                    }
-                }
-                .overlay(
-                    LoadingIndicator(isLoading: viewModel.isLoading),
-                    alignment: .bottom
-                )
+                PokemonListContent(viewModel: viewModel,
+                                   path: $path,
+                                   isLoadingNextPage: $isLoadingNextPage)
             }
             .navigationTitle("Pokémon List")
             .searchable(text: $viewModel.searchText, prompt: "Search Pokémon")

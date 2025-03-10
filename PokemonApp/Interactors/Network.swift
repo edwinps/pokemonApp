@@ -18,7 +18,7 @@ struct Network {
 
     struct constants {
         static let pageLimit = "limit"
-        static let itemPerPage = 2
+        static let itemPerPage = 100
         static let offset = "offset"
     }
 
