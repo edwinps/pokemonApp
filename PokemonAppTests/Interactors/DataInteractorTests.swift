@@ -8,6 +8,7 @@
 import XCTest
 @testable import PokemonApp
 
+@MainActor
 class DataInteractorTests: XCTestCase {
     var mockInteractor: MockDataInteractor!
 

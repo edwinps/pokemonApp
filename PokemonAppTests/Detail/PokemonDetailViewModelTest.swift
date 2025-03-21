@@ -9,6 +9,7 @@ import Combine
 import SwiftUI
 @testable import PokemonApp
 
+@MainActor
 class PokemonDetailViewModelTests: XCTestCase {
     var viewModel: PokemonDetailViewModel!
     var mockNetwork: MockDataInteractor!

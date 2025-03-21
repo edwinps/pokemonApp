@@ -9,6 +9,7 @@ import XCTest
 import Combine
 @testable import PokemonApp
 
+@MainActor
 class PokemonListViewModelTests: XCTestCase {
     var viewModel: PokemonListViewModel!
     var mockNetwork: MockDataInteractor!
@@ -51,7 +52,7 @@ class PokemonListViewModelTests: XCTestCase {
             .store(in: &cancellables)
 
         // When
-        await viewModel.fetchPokemonList()
+        await viewModel.firstPage()
 
         // Then
         await fulfillment(of: [expectation], timeout: 2)
@@ -76,7 +77,7 @@ class PokemonListViewModelTests: XCTestCase {
             .store(in: &cancellables)
 
         // When
-        await viewModel.fetchPokemonList()
+        await viewModel.firstPage()
 
         // Then
         await fulfillment(of: [expectation], timeout: 2)
@@ -111,7 +112,7 @@ class PokemonListViewModelTests: XCTestCase {
         ]
 
         mockNetwork.mockPokemonListResponse = PokemonListResponse(results: firstPagePokemons, next: "next-url")
-        await viewModel.fetchPokemonList()
+        await viewModel.firstPage()
 
         XCTAssertEqual(viewModel.pokemons.count, 1)
         XCTAssertEqual(viewModel.pokemons.first?.name, "Charmander")

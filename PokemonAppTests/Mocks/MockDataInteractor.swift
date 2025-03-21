@@ -8,7 +8,8 @@
 import XCTest
 @testable import PokemonApp
 
-class MockDataInteractor: DataInteractor {
+@MainActor
+final class MockDataInteractor: DataInteractor {
     var shouldThrowError = false
     var mockPokemonListResponse = PokemonListResponse(results: [], next: nil)
     var mockPokemon: Pokemon?
