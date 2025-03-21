@@ -16,7 +16,7 @@ struct LoadingIndicator: View {
                 .controlSize(.large)
                 .padding(.vertical)
         } else {
-            Color.clear
+            EmptyView()
         }
     }
 }

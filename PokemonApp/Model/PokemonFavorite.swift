@@ -18,3 +18,4 @@ final class PokemonFavorite {
         self.name = name
     }
 }
+extension KeyPath<PokemonFavorite, Int>: @unchecked @retroactive Sendable {}

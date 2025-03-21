@@ -6,6 +6,7 @@
 //
 import Foundation
 
+@MainActor
 protocol DataStorageInteractor {
     func loadFavorites() async -> Set<Int>
     func addFavorite(id: Int, name: String) async throws

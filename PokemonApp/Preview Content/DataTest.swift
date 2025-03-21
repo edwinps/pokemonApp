@@ -14,10 +14,12 @@ extension PokemonSummary {
     static let testPikachu: PokemonSummary = PokemonSummary(name: "Pikachu", url: "https://pokeapi.co/api/v2/pokemon/25/")
 }
 
+@MainActor
 extension PokemonListViewModel {
     static let test = PokemonListViewModel(network: DataTest(), storage: DataStorageTest())
 }
 
+@MainActor
 extension PokemonDetailViewModel {
     static let test = PokemonDetailViewModel(network: DataTest(), pokemonSummary: .testPikachu)
 }

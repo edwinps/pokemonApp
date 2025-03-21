@@ -21,14 +21,15 @@ final class PokemonDetailViewModel: ObservableObject {
         self.pokemonSummary = pokemonSummary
     }
 
+    @MainActor
     func fetchPokemonDetail() async {
-        await setLoading(true)
+        self.isLoading = true
         do {
             guard let pokemon = try await network.getPokemon(name: pokemonSummary.name) else {
-                await setErrorMessage("Failed to load Pokémon details.")
+                self.errorMessage = "Failed to load Pokémon details."
                 return
             }
-            await setpokemon(pokemon)
+            self.pokemon = pokemon
             let pokemonSpecie = try await network.getSpecies(name: pokemon.name)
             var removeSpecies = [pokemon.name]
             removeSpecies.append(pokemonSpecie.evolvesFromSpecies?.name ?? "")
@@ -37,30 +38,15 @@ final class PokemonDetailViewModel: ObservableObject {
                 return
             }
             let evolutions = extractEvolutionNames(from: try await network.getEvolutions(url: evolutionURL).chain)
-            await setEvolutions(evolutions, removeSpecie: removeSpecies)
+            setEvolutions(evolutions, removeSpecie: removeSpecies)
         } catch {
-            await setErrorMessage("Failed to load Pokémon details.")
+            self.errorMessage = "Failed to load Pokémon details."
         }
-        await setLoading(false)
+        self.isLoading = false
     }
 }
 
 private extension PokemonDetailViewModel {
-    @MainActor
-    private func setLoading(_ loading: Bool) {
-        self.isLoading = loading
-    }
-
-    @MainActor
-    private func setpokemon(_ pokemon: Pokemon?) {
-        self.pokemon = pokemon
-    }
-
-    @MainActor
-    private func setErrorMessage(_ message: String) {
-        self.errorMessage = message
-    }
-
     @MainActor
     private func setEvolutions(_ evolutions: [String], removeSpecie: [String]) {
         self.evolutions = evolutions

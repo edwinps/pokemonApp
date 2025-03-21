@@ -7,35 +7,36 @@
 import SwiftUI
 
 struct PokemonListView: View {
-    @StateObject private var viewModel: PokemonListViewModel
+    @ObservedObject private var viewModel: PokemonListViewModel
     @State private var isLoadingNextPage = false
     @State var path: [NavigationPath] = []
 
     init(viewModel: PokemonListViewModel)  {
-        _viewModel = StateObject(wrappedValue: viewModel)
+        self.viewModel = viewModel
     }
 
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                PokemonListContent(viewModel: viewModel,
-                                   path: $path,
-                                   isLoadingNextPage: $isLoadingNextPage)
+                if let error = viewModel.errorMessage  {
+                    ContentUnavailableView("error",
+                                           systemImage: "exclamationmark.triangle",
+                                           description: Text(error))
+                } else {
+                    PokemonListContent(viewModel: viewModel,
+                                       path: $path,
+                                       isLoadingNextPage: $isLoadingNextPage)
+                }
             }
             .navigationTitle("Pokémon List")
             .searchable(text: $viewModel.searchText, prompt: "Search Pokémon")
             .toolbar { sortingMenu }
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") { viewModel.errorMessage = nil }
-            } message: {
-                Text(viewModel.errorMessage ?? "")
-            }
             .navigationDestination(for: NavigationPath.self) { screen in
                 destinationView(for: screen)
             }
         }
         .task { [viewModel] in
-            await viewModel.fetchPokemonList()
+            await viewModel.firstPage()
         }
     }
 }
