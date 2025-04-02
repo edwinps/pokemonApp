@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "shared",
-            url: "https://github.com/edwinps/pokemonApp/releases/download/1.0.0/shared.xcframework.zip",
+            url: "https://github.com/edwinps/pokemonApp/releases/assets/242560956",
             checksum: "3ed98867c128e28f63d1dba60efcabafdaafa398ee6126affcd07653d30c32c6"
         )
     ]
