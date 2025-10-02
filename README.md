@@ -1,5 +1,6 @@
 # ✨ Pokemon List App
 
+
 ## 📌 Description
 This is an iOS application developed in **Swift** using **SwiftUI**, **Concurrency (async/await)**, and **SwiftData**. The app displays a list of Pokémon fetched from the **Pokémon API**, allowing users to navigate to their details and mark them as favorites.
 
